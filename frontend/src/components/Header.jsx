@@ -1,64 +1,85 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from './ui/button';
-import { AuthContext } from '../App';
-import { User, LogOut, Calendar } from 'lucide-react';
+import { ThemeContext } from '../App';
+import { BookOpen, Bookmark, Sun, Moon, Home } from 'lucide-react';
 
 export default function Header() {
-  const { user, logout, setShowAuthModal } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  const location = useLocation();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border" data-testid="header">
-      <div className="mx-auto max-w-[1200px] px-4 md:px-6">
-        <div className="flex h-16 items-center justify-between">
+    <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b border-border/50 transition-colors duration-500" data-testid="header">
+      <div className="mx-auto max-w-[800px] px-4">
+        <div className="flex h-14 items-center justify-between">
           <Link to="/" className="flex items-center gap-2" data-testid="logo-link">
-            <div className="text-2xl font-semibold font-['Playfair_Display'] text-[hsl(164_28%_38%)]">
-              CaterHub
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-primary text-lg leading-none">+</span>
             </div>
+            <span className="text-lg font-medium font-scripture text-foreground tracking-wide">
+              Quiet Verse
+            </span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            {user ? (
-              <>
-                <Button
-                  variant="ghost"
-                  onClick={() => navigate('/dashboard')}
-                  className="gap-2"
-                  data-testid="dashboard-button"
-                >
-                  <Calendar className="h-4 w-4" />
-                  My Bookings
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={handleLogout}
-                  className="gap-2"
-                  data-testid="logout-button"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Logout
-                </Button>
-                <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-secondary" data-testid="user-info">
-                  <User className="h-4 w-4" />
-                  <span className="text-sm font-medium">{user.name}</span>
-                </div>
-              </>
-            ) : (
+          <nav className="flex items-center gap-1">
+            <Link to="/">
               <Button
-                onClick={() => setShowAuthModal(true)}
-                className="bg-[hsl(164_28%_38%)] text-[hsl(45_33%_98%)] hover:bg-[hsl(164_28%_34%)]"
-                data-testid="login-button"
+                variant="ghost"
+                size="sm"
+                className={`gap-1.5 text-xs ${isActive('/') ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
+                data-testid="nav-home"
               >
-                Login / Sign Up
+                <Home className="h-4 w-4" />
+                <span className="hidden sm:inline">Home</span>
               </Button>
-            )}
-          </div>
+            </Link>
+
+            <Link to="/read">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-1.5 text-xs ${isActive('/read') ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
+                data-testid="nav-read"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">Read</span>
+              </Button>
+            </Link>
+
+            <Link to="/bookmarks">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-1.5 text-xs ${isActive('/bookmarks') ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`}
+                data-testid="nav-bookmarks"
+              >
+                <Bookmark className="h-4 w-4" />
+                <span className="hidden sm:inline">Saved</span>
+              </Button>
+            </Link>
+
+            <div className="w-px h-5 bg-border mx-1" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleTheme}
+              className="text-muted-foreground hover:text-foreground"
+              data-testid="theme-toggle"
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? (
+                <Moon className="h-4 w-4" />
+              ) : (
+                <Sun className="h-4 w-4" />
+              )}
+            </Button>
+          </nav>
         </div>
       </div>
     </header>

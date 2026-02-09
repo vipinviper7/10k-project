@@ -1,88 +1,99 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext } from 'react';
 import '@/App.css';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
-import SearchPage from './pages/SearchPage';
-import ProviderPage from './pages/ProviderPage';
-import DashboardPage from './pages/DashboardPage';
+import ReaderPage from './pages/ReaderPage';
+import BookmarksPage from './pages/BookmarksPage';
 import Header from './components/Header';
-import AuthModal from './components/AuthModal';
 import { Toaster } from './components/ui/sonner';
-import axios from 'axios';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+// Theme context for dark/light mode
+export const ThemeContext = createContext(null);
 
-export const AuthContext = React.createContext(null);
+// Bookmarks context for local storage
+export const BookmarkContext = createContext(null);
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('qv-theme') || 'light';
+  });
 
-  useEffect(() => {
-    if (token) {
-      fetchCurrentUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
-  const fetchCurrentUser = async () => {
+  const [bookmarks, setBookmarks] = useState(() => {
     try {
-      const response = await axios.get(`${API}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      logout();
-    } finally {
-      setLoading(false);
+      const saved = localStorage.getItem('qv-bookmarks');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
     }
+  });
+
+  const [fontSize, setFontSize] = useState(() => {
+    return parseInt(localStorage.getItem('qv-fontsize') || '20', 10);
+  });
+
+  // Apply theme class to document
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('qv-theme', theme);
+  }, [theme]);
+
+  // Persist bookmarks
+  useEffect(() => {
+    localStorage.setItem('qv-bookmarks', JSON.stringify(bookmarks));
+  }, [bookmarks]);
+
+  // Persist font size
+  useEffect(() => {
+    localStorage.setItem('qv-fontsize', fontSize.toString());
+  }, [fontSize]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
 
-  const login = (userData, authToken) => {
-    setUser(userData);
-    setToken(authToken);
-    localStorage.setItem('token', authToken);
-    setShowAuthModal(false);
+  const addBookmark = (bookmark) => {
+    setBookmarks(prev => {
+      const key = `${bookmark.book}:${bookmark.chapter}:${bookmark.verse}`;
+      if (prev.some(b => `${b.book}:${b.chapter}:${b.verse}` === key)) return prev;
+      return [{ ...bookmark, savedAt: Date.now() }, ...prev];
+    });
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
-      </div>
+  const removeBookmark = (book, chapter, verse) => {
+    setBookmarks(prev =>
+      prev.filter(b => !(b.book === book && b.chapter === chapter && b.verse === verse))
     );
-  }
+  };
+
+  const isBookmarked = (book, chapter, verse) => {
+    return bookmarks.some(b => b.book === book && b.chapter === chapter && b.verse === verse);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, setShowAuthModal }}>
-      <div className="App">
-        <BrowserRouter>
-          <Header />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/provider/:id" element={<ProviderPage />} />
-            <Route 
-              path="/dashboard" 
-              element={user ? <DashboardPage /> : <Navigate to="/" replace />} 
-            />
-          </Routes>
-        </BrowserRouter>
-        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
-        <Toaster position="top-center" data-testid="toast-container" />
-      </div>
-    </AuthContext.Provider>
+    <ThemeContext.Provider value={{ theme, toggleTheme, fontSize, setFontSize }}>
+      <BookmarkContext.Provider value={{ bookmarks, addBookmark, removeBookmark, isBookmarked }}>
+        <div className="App min-h-screen bg-background transition-colors duration-500">
+          <BrowserRouter>
+            <Header />
+            <main className="pb-8">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/read" element={<ReaderPage />} />
+                <Route path="/read/:bookName" element={<ReaderPage />} />
+                <Route path="/read/:bookName/:chapter" element={<ReaderPage />} />
+                <Route path="/bookmarks" element={<BookmarksPage />} />
+              </Routes>
+            </main>
+          </BrowserRouter>
+          <Toaster position="top-center" />
+        </div>
+      </BookmarkContext.Provider>
+    </ThemeContext.Provider>
   );
 }
 
