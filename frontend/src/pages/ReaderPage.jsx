@@ -148,13 +148,13 @@ function ChapterReader({ bookName, chapter, verses, onPrev, onNext, hasPrev, has
               <span className="font-scripture text-foreground">{verse.text} </span>
               <button
                 onClick={() => handleBookmark(verse)}
-                className="inline-flex align-middle opacity-0 group-hover:opacity-100 transition-opacity"
+                className="inline-flex align-middle min-w-[44px] min-h-[44px] items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
                 aria-label={saved ? 'Remove bookmark' : 'Bookmark this verse'}
               >
                 {saved ? (
-                  <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
                 ) : (
-                  <Bookmark className="h-3.5 w-3.5 text-muted-foreground/40" />
+                  <Bookmark className="h-4 w-4 text-muted-foreground/40" />
                 )}
               </button>
             </span>

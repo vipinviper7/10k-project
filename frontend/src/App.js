@@ -1,11 +1,12 @@
 import React, { useState, useEffect, createContext } from 'react';
 import '@/App.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ReaderPage from './pages/ReaderPage';
 import BookmarksPage from './pages/BookmarksPage';
 import Header from './components/Header';
 import { Toaster } from './components/ui/sonner';
+import { syncStatusBarWithTheme, hapticLight } from './capacitorInit';
 
 // Theme context for dark/light mode
 export const ThemeContext = createContext(null);
@@ -40,6 +41,7 @@ function App() {
       root.classList.remove('dark');
     }
     localStorage.setItem('qv-theme', theme);
+    syncStatusBarWithTheme(theme);
   }, [theme]);
 
   // Persist bookmarks
@@ -60,11 +62,13 @@ function App() {
     setBookmarks(prev => {
       const key = `${bookmark.book}:${bookmark.chapter}:${bookmark.verse}`;
       if (prev.some(b => `${b.book}:${b.chapter}:${b.verse}` === key)) return prev;
+      hapticLight();
       return [{ ...bookmark, savedAt: Date.now() }, ...prev];
     });
   };
 
   const removeBookmark = (book, chapter, verse) => {
+    hapticLight();
     setBookmarks(prev =>
       prev.filter(b => !(b.book === book && b.chapter === chapter && b.verse === verse))
     );
@@ -78,7 +82,7 @@ function App() {
     <ThemeContext.Provider value={{ theme, toggleTheme, fontSize, setFontSize }}>
       <BookmarkContext.Provider value={{ bookmarks, addBookmark, removeBookmark, isBookmarked }}>
         <div className="App min-h-screen bg-background transition-colors duration-500">
-          <BrowserRouter>
+          <HashRouter>
             <Header />
             <main className="pb-8">
               <Routes>
@@ -89,7 +93,7 @@ function App() {
                 <Route path="/bookmarks" element={<BookmarksPage />} />
               </Routes>
             </main>
-          </BrowserRouter>
+          </HashRouter>
           <Toaster position="top-center" />
         </div>
       </BookmarkContext.Provider>

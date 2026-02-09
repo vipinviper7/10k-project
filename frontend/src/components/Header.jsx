@@ -14,7 +14,7 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b border-border/50 transition-colors duration-500" data-testid="header">
+    <header className="sticky top-0 z-50 bg-background/85 backdrop-blur-md border-b border-border/50 transition-colors duration-500 safe-area-top" data-testid="header">
       <div className="mx-auto max-w-[800px] px-4">
         <div className="flex h-14 items-center justify-between">
           <Link to="/" className="flex items-center gap-2" data-testid="logo-link">

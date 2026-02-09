@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from './ui/button';
 import { Play, Pause, RotateCcw } from 'lucide-react';
+import { hapticSuccess } from '../capacitorInit';
 
 const DURATIONS = [
   { label: '1 min', seconds: 60 },
@@ -52,6 +53,7 @@ export default function ReflectionTimer() {
           if (prev <= 1) {
             setIsRunning(false);
             setIsComplete(true);
+            hapticSuccess();
             return 0;
           }
           return prev - 1;
