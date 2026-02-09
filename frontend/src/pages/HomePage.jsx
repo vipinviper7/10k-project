@@ -1,87 +1,141 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import SearchBar from '../components/SearchBar';
-import { ChefHat, Users, Calendar, Star } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { Link } from 'react-router-dom';
+import { getDailyVerse, getRandomVerse } from '../data/dailyVerses';
+import ReflectionTimer from '../components/ReflectionTimer';
+import { BookmarkContext, ThemeContext } from '../App';
+import { Button } from '../components/ui/button';
+import { BookOpen, Bookmark, BookmarkCheck, RefreshCw, ChevronDown } from 'lucide-react';
 
 export default function HomePage() {
+  const [verse, setVerse] = useState(getDailyVerse);
+  const [showTimer, setShowTimer] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { addBookmark, removeBookmark, isBookmarked } = useContext(BookmarkContext);
+  const { fontSize } = useContext(ThemeContext);
+
+  const saved = isBookmarked(verse.book, verse.chapter, 0);
+
+  const handleNewVerse = () => {
+    setIsRefreshing(true);
+    setTimeout(() => {
+      setVerse(getRandomVerse());
+      setIsRefreshing(false);
+    }, 300);
+  };
+
+  const handleBookmark = () => {
+    if (saved) {
+      removeBookmark(verse.book, verse.chapter, 0);
+    } else {
+      addBookmark({
+        book: verse.book,
+        chapter: verse.chapter,
+        verse: 0,
+        text: verse.text,
+        reference: verse.reference,
+      });
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section 
-        className="relative overflow-hidden bg-[linear-gradient(135deg,hsl(156_32%_96%)_0%,hsl(38_60%_96%)_40%,hsl(45_33%_98%)_100%)]"
-        data-testid="hero-section"
-      >
-        <div className="mx-auto max-w-[1200px] px-4 md:px-6 py-16 md:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
-          >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.1] font-semibold font-['Playfair_Display'] mb-4">
-              Discover Your Perfect
-              <br />
-              <span className="text-[hsl(164_28%_38%)]">Catering Experience</span>
-            </h1>
-            <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
-              Book catering services, personal chefs, and bartenders for your special events
-            </p>
-          </motion.div>
+    <div className="min-h-[calc(100vh-3.5rem)] flex flex-col" data-testid="home-page">
+      {/* Main verse section */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-[700px] mx-auto w-full">
+        {/* Greeting */}
+        <p className="text-sm text-muted-foreground mb-8 animate-fade-in tracking-widest uppercase">
+          {getGreeting()}
+        </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-white/80 backdrop-blur p-6 rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
+        {/* Daily verse */}
+        <div
+          className={`text-center transition-opacity duration-300 ${isRefreshing ? 'opacity-0' : 'opacity-100'}`}
+        >
+          <blockquote
+            className="font-scripture leading-relaxed text-foreground text-balance animate-fade-in-delay-1"
+            style={{ fontSize: `${fontSize}px`, lineHeight: 1.7 }}
+            data-testid="daily-verse"
           >
-            <SearchBar />
-          </motion.div>
+            &ldquo;{verse.text}&rdquo;
+          </blockquote>
+
+          <cite className="block mt-6 text-sm text-primary font-medium not-italic animate-fade-in-delay-2 tracking-wide">
+            &mdash; {verse.reference}
+          </cite>
         </div>
+
+        {/* Verse actions */}
+        <div className="flex items-center gap-2 mt-8 animate-fade-in-delay-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBookmark}
+            className={`gap-1.5 text-xs ${saved ? 'text-primary' : 'text-muted-foreground'}`}
+            data-testid="bookmark-verse"
+          >
+            {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+            {saved ? 'Saved' : 'Save'}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleNewVerse}
+            className="gap-1.5 text-xs text-muted-foreground"
+            data-testid="new-verse"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Another verse
+          </Button>
+
+          <Link to="/read">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-muted-foreground"
+              data-testid="open-bible"
+            >
+              <BookOpen className="h-4 w-4" />
+              Open Bible
+            </Button>
+          </Link>
+        </div>
+
+        {/* Reflect prompt */}
+        {!showTimer && (
+          <button
+            onClick={() => setShowTimer(true)}
+            className="mt-12 flex flex-col items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors animate-fade-in-delay-2"
+            data-testid="show-timer"
+          >
+            <span className="text-xs tracking-widest uppercase">Reflect</span>
+            <ChevronDown className="h-4 w-4 animate-bounce" />
+          </button>
+        )}
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 md:py-24 bg-background" data-testid="features-section">
-        <div className="mx-auto max-w-[1200px] px-4 md:px-6">
-          <h2 className="text-3xl font-semibold text-center mb-12 font-['Playfair_Display']">
-            Why Choose CaterHub?
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {[
-              { icon: ChefHat, title: 'Expert Chefs', desc: 'Top-rated culinary professionals' },
-              { icon: Users, title: 'Any Event Size', desc: 'From intimate to grand events' },
-              { icon: Calendar, title: 'Easy Booking', desc: 'Simple scheduling process' },
-              { icon: Star, title: 'Verified Reviews', desc: 'Real feedback from clients' }
-            ].map((feature, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className="text-center"
-              >
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[hsl(156_32%_94%)] mb-4">
-                  <feature.icon className="w-8 h-8 text-[hsl(164_28%_38%)]" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.desc}</p>
-              </motion.div>
-            ))}
+      {/* Reflection timer section */}
+      {showTimer && (
+        <section className="pb-16 px-6 animate-fade-in">
+          <div className="max-w-[400px] mx-auto">
+            <div className="text-center mb-8">
+              <p className="text-xs text-muted-foreground tracking-widest uppercase mb-2">
+                A moment of quiet
+              </p>
+              <p className="text-sm text-muted-foreground/80 font-scripture italic">
+                Be still, and know that I am God
+              </p>
+            </div>
+            <ReflectionTimer />
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-[hsl(156_32%_94%)]" data-testid="cta-section">
-        <div className="mx-auto max-w-[1200px] px-4 md:px-6 text-center">
-          <h2 className="text-3xl font-semibold mb-4 font-['Playfair_Display']">
-            Ready to Find Your Perfect Caterer?
-          </h2>
-          <p className="text-lg text-foreground/80 mb-8">
-            Join thousands of satisfied clients who found their ideal catering service
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
     </div>
   );
 }
