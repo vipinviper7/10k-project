@@ -17,6 +17,14 @@ export function useEntries() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const urlsRef = useRef(new Map());
+  // Mirror of `entries` that updates synchronously, so async mutators can
+  // read the latest list without waiting for a React render.
+  const entriesRef = useRef([]);
+
+  const commit = useCallback((next) => {
+    entriesRef.current = next;
+    setEntries(next);
+  }, []);
 
   const withUrl = useCallback((entry) => {
     let url = urlsRef.current.get(entry.id);
@@ -31,7 +39,7 @@ export function useEntries() {
     let cancelled = false;
     getAllEntries()
       .then((all) => {
-        if (!cancelled) setEntries(all.map(withUrl));
+        if (!cancelled) commit(all.map(withUrl));
       })
       .catch((err) => console.error('Failed to load entries', err))
       .finally(() => {
@@ -44,7 +52,7 @@ export function useEntries() {
       urls.forEach((url) => URL.revokeObjectURL(url));
       urls.clear();
     };
-  }, [withUrl]);
+  }, [commit, withUrl]);
 
   const capture = useCallback(
     async (file) => {
@@ -60,37 +68,37 @@ export function useEntries() {
       };
       await addEntry(entry);
       const decorated = withUrl(entry);
-      setEntries((prev) => [decorated, ...prev]);
+      commit([decorated, ...entriesRef.current]);
       return decorated;
     },
-    [withUrl]
+    [commit, withUrl]
   );
 
-  const update = useCallback(async (id, patch) => {
-    let updated = null;
-    setEntries((prev) =>
-      prev.map((e) => {
-        if (e.id !== id) return e;
-        updated = { ...e, ...patch };
-        return updated;
-      })
-    );
-    if (updated) {
+  const update = useCallback(
+    async (id, patch) => {
+      const current = entriesRef.current.find((e) => e.id === id);
+      if (!current) return null;
+      const updated = { ...current, ...patch };
+      commit(entriesRef.current.map((e) => (e.id === id ? updated : e)));
       const { photoUrl, ...record } = updated;
       await updateEntry(record);
-    }
-    return updated;
-  }, []);
+      return updated;
+    },
+    [commit]
+  );
 
-  const remove = useCallback(async (id) => {
-    await deleteEntry(id);
-    const url = urlsRef.current.get(id);
-    if (url) {
-      URL.revokeObjectURL(url);
-      urlsRef.current.delete(id);
-    }
-    setEntries((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+  const remove = useCallback(
+    async (id) => {
+      await deleteEntry(id);
+      const url = urlsRef.current.get(id);
+      if (url) {
+        URL.revokeObjectURL(url);
+        urlsRef.current.delete(id);
+      }
+      commit(entriesRef.current.filter((e) => e.id !== id));
+    },
+    [commit]
+  );
 
   return { entries, loading, capture, update, remove };
 }
