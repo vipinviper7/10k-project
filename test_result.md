@@ -101,3 +101,91 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Build an app to journal food every day by clicking pics of it time to time. It doesn't measure anything — only clicks pics and stores them."
+
+backend:
+  - task: "Health check stub (app is local-first, no API needed)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Replaced leftover catering-marketplace API with a minimal /api/health endpoint. All photo storage is client-side (IndexedDB), so no database or auth is required."
+
+frontend:
+  - task: "Photo capture via camera / file picker"
+    implemented: true
+    working: true
+    file: "frontend/src/components/CaptureButton.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Hidden input[type=file accept=image/* capture=environment] opens the camera on phones. Verified with Playwright: setInputFiles adds an entry, toast confirms."
+  - task: "IndexedDB storage with image compression"
+    implemented: true
+    working: true
+    file: "frontend/src/lib/db.js, frontend/src/lib/image.js, frontend/src/hooks/useEntries.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Photos compressed to max 1600px JPEG and stored as blobs. Verified entries, notes, and meal tags persist across page reloads."
+  - task: "Day-grouped timeline with meal tags and times"
+    implemented: true
+    working: true
+    file: "frontend/src/components/Timeline.jsx, frontend/src/components/EntryCard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Entries grouped under Today/Yesterday/date headings, 2-3 col photo grid with time + auto meal tag overlays. Verified via Playwright screenshots."
+  - task: "Entry detail: view, retag meal, note, download, delete"
+    implemented: true
+    working: true
+    file: "frontend/src/components/EntryDialog.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Dialog with full photo, meal chips, optional note, download and delete (with confirm). All flows verified end-to-end with Playwright."
+  - task: "Dark mode + theming"
+    implemented: true
+    working: true
+    file: "frontend/src/App.js, frontend/src/index.css"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Warm terracotta/cream palette, dark variant verified via screenshot; theme persisted in localStorage."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Full e2e pass with Playwright against the production build: empty state, capture x2, header count, detail dialog, meal retag, note persistence across reload, delete with confirm, dark mode. All passed with no console errors."
