@@ -3,6 +3,8 @@
 A dead-simple food journal: snap a photo of whatever you eat or drink, and it lands in a
 day-by-day timeline. No calories, no portions, no measuring — just pictures.
 
+**Live app:** https://vipinviper7.github.io/10k-project/
+
 ## Features
 
 - **One-tap capture** — the floating Snap button opens the phone camera directly
@@ -32,6 +34,16 @@ client-side and needs no database or API.
 cd backend
 pip install -r requirements.txt
 uvicorn server:app --reload   # GET /api/health
+```
+
+## Deploying
+
+The app is hosted on GitHub Pages from the `gh-pages` branch. To publish a new build:
+
+```bash
+cd frontend
+yarn build
+# copy the contents of frontend/build/ onto the gh-pages branch and push
 ```
 
 ## Regenerating app icons
