@@ -1,102 +1,85 @@
 import React, { useState, useEffect, createContext } from 'react';
 import '@/App.css';
-import { HashRouter, Routes, Route } from 'react-router-dom';
-import HomePage from './pages/HomePage';
-import ReaderPage from './pages/ReaderPage';
-import BookmarksPage from './pages/BookmarksPage';
-import Header from './components/Header';
-import { Toaster } from './components/ui/sonner';
-import { syncStatusBarWithTheme, hapticLight } from './capacitorInit';
+import { Header } from './components/Header';
+import { Timeline } from './components/Timeline';
+import { EmptyState } from './components/EmptyState';
+import { CaptureButton } from './components/CaptureButton';
+import { EntryDialog } from './components/EntryDialog';
+import { Toaster, toast } from './components/ui/sonner';
+import { Skeleton } from './components/ui/skeleton';
+import { useEntries } from './hooks/useEntries';
+import { syncStatusBarWithTheme, hapticSuccess } from './capacitorInit';
 
-// Theme context for dark/light mode
 export const ThemeContext = createContext(null);
 
-// Bookmarks context for local storage
-export const BookmarkContext = createContext(null);
-
 function App() {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('qv-theme') || 'light';
-  });
+  const [theme, setTheme] = useState(() => localStorage.getItem('fj-theme') || 'light');
+  const [openEntryId, setOpenEntryId] = useState(null);
+  const { entries, loading, capture, update, remove } = useEntries();
 
-  const [bookmarks, setBookmarks] = useState(() => {
-    try {
-      const saved = localStorage.getItem('qv-bookmarks');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [fontSize, setFontSize] = useState(() => {
-    return parseInt(localStorage.getItem('qv-fontsize') || '20', 10);
-  });
-
-  // Apply theme class to document
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('qv-theme', theme);
+    root.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('fj-theme', theme);
     syncStatusBarWithTheme(theme);
   }, [theme]);
 
-  // Persist bookmarks
-  useEffect(() => {
-    localStorage.setItem('qv-bookmarks', JSON.stringify(bookmarks));
-  }, [bookmarks]);
+  const toggleTheme = () => setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
 
-  // Persist font size
-  useEffect(() => {
-    localStorage.setItem('qv-fontsize', fontSize.toString());
-  }, [fontSize]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  const handleCapture = async (file) => {
+    try {
+      const entry = await capture(file);
+      hapticSuccess();
+      toast.success('Added to your journal', {
+        description: new Date(entry.takenAt).toLocaleTimeString([], {
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
+      });
+    } catch (err) {
+      console.error('Capture failed', err);
+      toast.error("Couldn't save that photo", { description: 'Please try again.' });
+    }
   };
 
-  const addBookmark = (bookmark) => {
-    setBookmarks(prev => {
-      const key = `${bookmark.book}:${bookmark.chapter}:${bookmark.verse}`;
-      if (prev.some(b => `${b.book}:${b.chapter}:${b.verse}` === key)) return prev;
-      hapticLight();
-      return [{ ...bookmark, savedAt: Date.now() }, ...prev];
-    });
+  const handleDelete = async (id) => {
+    setOpenEntryId(null);
+    await remove(id);
+    toast('Photo deleted');
   };
 
-  const removeBookmark = (book, chapter, verse) => {
-    hapticLight();
-    setBookmarks(prev =>
-      prev.filter(b => !(b.book === book && b.chapter === chapter && b.verse === verse))
-    );
-  };
-
-  const isBookmarked = (book, chapter, verse) => {
-    return bookmarks.some(b => b.book === book && b.chapter === chapter && b.verse === verse);
-  };
+  const openEntry = entries.find((e) => e.id === openEntryId) || null;
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, fontSize, setFontSize }}>
-      <BookmarkContext.Provider value={{ bookmarks, addBookmark, removeBookmark, isBookmarked }}>
-        <div className="App min-h-screen bg-background transition-colors duration-500">
-          <HashRouter>
-            <Header />
-            <main className="pb-8">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/read" element={<ReaderPage />} />
-                <Route path="/read/:bookName" element={<ReaderPage />} />
-                <Route path="/read/:bookName/:chapter" element={<ReaderPage />} />
-                <Route path="/bookmarks" element={<BookmarksPage />} />
-              </Routes>
-            </main>
-          </HashRouter>
-          <Toaster position="top-center" />
-        </div>
-      </BookmarkContext.Provider>
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      <div className="App min-h-screen bg-background transition-colors duration-500">
+        <Header entryCount={entries.length} />
+
+        <main className="mx-auto max-w-2xl px-4 pb-36 pt-6">
+          {loading ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-2xl" />
+              ))}
+            </div>
+          ) : entries.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <Timeline entries={entries} onOpen={(entry) => setOpenEntryId(entry.id)} />
+          )}
+        </main>
+
+        <CaptureButton onCapture={handleCapture} />
+
+        <EntryDialog
+          entry={openEntry}
+          onClose={() => setOpenEntryId(null)}
+          onUpdate={update}
+          onDelete={handleDelete}
+        />
+
+        <Toaster position="top-center" />
+      </div>
     </ThemeContext.Provider>
   );
 }

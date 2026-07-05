@@ -11,14 +11,14 @@ export async function initCapacitor() {
   const { Keyboard } = await import('@capacitor/keyboard');
 
   // Set initial status bar based on saved theme
-  const savedTheme = localStorage.getItem('qv-theme') || 'light';
+  const savedTheme = localStorage.getItem('fj-theme') || 'light';
   try {
     await StatusBar.setStyle({
       style: savedTheme === 'dark' ? Style.Dark : Style.Light,
     });
     if (Capacitor.getPlatform() === 'android') {
       await StatusBar.setBackgroundColor({
-        color: savedTheme === 'dark' ? '#171b26' : '#f5f0e8',
+        color: savedTheme === 'dark' ? '#171311' : '#faf7f1',
       });
     }
   } catch (_) {}
@@ -55,7 +55,7 @@ export async function syncStatusBarWithTheme(theme) {
     });
     if (Capacitor.getPlatform() === 'android') {
       await StatusBar.setBackgroundColor({
-        color: theme === 'dark' ? '#171b26' : '#f5f0e8',
+        color: theme === 'dark' ? '#171311' : '#faf7f1',
       });
     }
   } catch (_) {}

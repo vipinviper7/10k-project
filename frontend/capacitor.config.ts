@@ -1,21 +1,21 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.quietverse.app',
-  appName: 'Quiet Verse',
+  appId: 'com.bites.foodjournal',
+  appName: 'Bites',
   webDir: 'build',
   android: {
     scheme: 'https',
   },
   plugins: {
     StatusBar: {
-      backgroundColor: '#f5f0e8',
+      backgroundColor: '#faf7f1',
       style: 'DARK',
     },
     SplashScreen: {
-      launchShowDuration: 2000,
+      launchShowDuration: 1500,
       launchAutoHide: false,
-      backgroundColor: '#f5f0e8',
+      backgroundColor: '#faf7f1',
       showSpinner: false,
     },
     Keyboard: {
